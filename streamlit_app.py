@@ -30,11 +30,11 @@ if len(ingredients_list) > 5:
 # Continue with normal order flow if within 1 to 5 ingredients
 if ingredients_list:
     ingredients_string = ''
-    smoothiefroot_response = request.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-    sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
-
+    
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
+        smoothiefroot_response = request.get("https://my.smoothiefroot.com/api/fruit/watermelon")
+        sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
 
     my_insert_stmt = f"""insert into smoothies.public.orders(ingredients, name_on_order)
                          values ('{ingredients_string.strip()}', '{name_on_order}')"""
