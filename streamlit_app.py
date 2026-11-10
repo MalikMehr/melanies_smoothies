@@ -46,5 +46,12 @@ if ingredients_list:
 
 # New section to display smoothiefroot nutrition information
 import requests
+import pandas as pd
+
 smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-st.text(smoothiefroot_response.json(), use_container_width=True)
+
+# Take the json version of the response and normalize it
+sf_df = pd.json_normalize(smoothiefroot_response.json())
+
+# Display the table on the page
+st.dataframe(data=sf_df, use_container_width=True)
