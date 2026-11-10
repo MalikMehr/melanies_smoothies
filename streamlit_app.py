@@ -30,6 +30,8 @@ if len(ingredients_list) > 5:
 # Continue with normal order flow if within 1 to 5 ingredients
 if ingredients_list:
     ingredients_string = ''
+    smoothiefroot_response = request.get("https://my.smoothiefroot.com/api/fruit/watermelon")
+    sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
 
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
@@ -44,14 +46,8 @@ if ingredients_list:
         st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
 
 
-# New section to display smoothiefroot nutrition information
+
 import requests
-import pandas as pd
-
 smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
+sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
 
-# Take the json version of the response and normalize it
-sf_df = pd.json_normalize(smoothiefroot_response.json())
-
-# Display the table on the page
-st.dataframe(data=sf_df, use_container_width=True)
