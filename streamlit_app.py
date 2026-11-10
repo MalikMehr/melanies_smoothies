@@ -2,6 +2,7 @@
 import streamlit as st
 from snowflake.snowpark.functions import col
 import requests
+import pandas as pd
 
 # Write directly to the app
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -14,36 +15,32 @@ st.write("The name on your Smoothie will be:", name_on_order)
 
 cnx = st.connection("snowflake")
 session = cnx.session()
-my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
+
+# Select both FRUIT_NAME and SEARCH_ON
+my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
+
+# Convert Snowpark DataFrame to Pandas DataFrame to use .loc[]
+pd_df = my_dataframe.to_pandas()
 
 # Multiselect for choosing ingredients
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:',
-    my_dataframe
+    my_dataframe,
+    max_selections=5
 )
 
-# Check if they picked 6 or more
-if len(ingredients_list) > 5:
-    st.warning('You can only select up to 5 ingredients! Please remove an ingredient.', icon="⚠️")
-    st.stop()
-
-# Continue with normal order flow if within 1 to 5 ingredients
+# Continue with normal order flow if ingredients are selected
 if ingredients_list:
     ingredients_string = ''
     
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
         
-        # Display subheader and nutrition table for each selected fruit
+        # Look up the SEARCH_ON value corresponding to the chosen fruit name
+        search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
+        st.write('The search value for ', fruit_chosen, ' is ', search_on, '.')
+        
+        # Display subheader and nutrition table
         st.subheader(fruit_chosen + ' Nutrition Information')
         smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen}")
         sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
-
-    my_insert_stmt = f"""insert into smoothies.public.orders(ingredients, name_on_order)
-                         values ('{ingredients_string.strip()}', '{name_on_order}')"""
-
-    time_to_insert = st.button('Submit Order')
-
-    if time_to_insert:
-        session.sql(my_insert_stmt).collect()
-        st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
